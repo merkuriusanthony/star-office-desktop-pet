@@ -209,7 +209,12 @@ fn read_state_file(state_path: &PathBuf) -> Result<PetState, String> {
     serde_json::from_str(&raw).map_err(|e| format!("parse: {e}"))
 }
 
+const REMOTE_BACKEND_URL: &str = "https://dashboard.claireantonia.id";
+
 fn read_state_via_backend() -> Result<PetState, String> {
+    if std::env::var("STAR_REMOTE_BACKEND").is_ok() {
+        return read_state_via_remote();
+    }
     let mut stream = std::net::TcpStream::connect("127.0.0.1:19000")
         .map_err(|e| format!("backend connect: {e}"))?;
     let _ = stream.set_read_timeout(Some(Duration::from_millis(1200)));
@@ -232,7 +237,23 @@ fn read_state_via_backend() -> Result<PetState, String> {
     serde_json::from_str(body).map_err(|e| format!("backend json parse: {e}"))
 }
 
+fn read_state_via_remote() -> Result<PetState, String> {
+    let url = format!("{REMOTE_BACKEND_URL}/status");
+    let resp = reqwest::blocking::Client::new()
+        .get(&url)
+        .timeout(Duration::from_millis(3000))
+        .send()
+        .map_err(|e| format!("remote connect: {e}"))?;
+    let body = resp
+        .text()
+        .map_err(|e| format!("remote read: {e}"))?;
+    serde_json::from_str(&body).map_err(|e| format!("remote json parse: {e}"))
+}
+
 fn read_state_with_fallback(state_path: &PathBuf) -> Result<PetState, String> {
+    if std::env::var("STAR_REMOTE_BACKEND").is_ok() {
+        return read_state_via_remote();
+    }
     match read_state_file(state_path) {
         Ok(state) => Ok(state),
         Err(file_err) => {
