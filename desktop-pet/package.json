@@ -3,11 +3,12 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev": "STAR_PROJECT_ROOT=.. tauri dev",
-    "build": "STAR_PROJECT_ROOT=.. tauri build",
+    "dev": "cross-env STAR_PROJECT_ROOT=.. tauri dev",
+    "build": "cross-env STAR_PROJECT_ROOT=.. tauri build",
     "tauri": "tauri"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2"
+    "@tauri-apps/cli": "^2",
+    "cross-env": "^7"
   }
 }
